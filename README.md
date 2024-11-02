@@ -8,19 +8,31 @@ This template should help get you started developing with Tauri, React and Types
 
 
 # Issue
-![image](https://github.com/user-attachments/assets/4eb00ee3-8c9e-4251-bb6a-8a9f322dd69e)
+![image](https://github.com/user-attachments/assets/5893789d-055a-4d7a-83ba-ed2b540502de)
+
 
 The following issue arises - the react state resets after deep-link & single-instance plugins detect an invoke.
 
-This is tested under `Windows` OS using the following setup:
+This is tested under `Windows` OS using the following setup (steps to reproduce):
 
 - init Tauri app using the quick-start guide;
-- add single-instance plugin and setup according guidelines;
-- add deep-linking plugin and setup according guidelines;
-- add `listener` hook to receive events from BE (Rust side), in order to capture the deep-link args;
-- execute calculation according received data (example explained below)
+- add `single-instance` plugin and setup according guidelines;
+- add `deep-link` plugin and setup according guidelines;
+- add `listener` hook to receive events from BE (Rust side), in order to capture the `deep-link` args;
+- execute calculation according received data (example explained below):
 
 
-in this case, we are sending `start "demo-react-state://?action=sub&number=5"` and then `"demo-react-state://?action=add&number=5"` through the terminal - what SHOULD happen is that initially, we have the number 0 as a result. After the first action `sub` with `number=5`, we should get a result of `-5`. This happens, but it is not from the expected behaviour, but by pure coincidence. Now triggering the next action `add` with `number=5` we SHOULD see that the total is equal to `0` but instead, the total is now `5`.
+in this case, we are sending:
 
-We can see that the console log placed inside the callback function prints out initial (maybe, not sure) state changes after execution. What's not logged, is the event itself - it has an `id` of `0` both times it was triggered.
+`start "demo-react-state://?action=add&number=1"`;
+`start "demo-react-state://?action=add&number=2"`;
+`start "demo-react-state://?action=add&number=3"`;
+`start "demo-react-state://?action=add&number=4"`;
+`start "demo-react-state://?action=add&number=5"`;
+
+through the terminal - what SHOULD happen is that initially, we have the number 0 as a result. 
+After the first action `ad` with `number=1`, we should get a result of `1`. This happens, but it is not from the expected behaviour, but by pure coincidence. 
+
+Now triggering the next actions `add` with numbers `2`, `3`, `4` and `5` we SHOULD see that the total increments accordingly (1+2=3; 3+3=6; 6+4=10; 10+5=15), but instead, we see that the last (and total) numbers are both `5`.
+
+We can see that the console log placed inside the callback function prints out initial (maybe, not sure) state changes after execution. What's also logged, is the event itself - it has an `id` of `0` every time the listener was triggered.
