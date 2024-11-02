@@ -63,6 +63,7 @@ function App() {
       } else {
         setTotal(total - numericInput);
       }
+      setLastAction(action);
     } catch (error) {
       console.log('cannot parse number to a valid numeric value');
       return;
