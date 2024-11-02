@@ -1,49 +1,82 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { useState } from 'react';
+import './App.css';
+import { useWindowEventListener } from './hooks/useWindowEventListener.hook';
+
+type MathAction = 'add' | 'sub';
+
+interface IData {
+  action: MathAction;
+  number: string;
+}
+
+const extractDataFromUrl = (url: string): IData => {
+  const data: IData = {} as IData;
+  // the url is in the format <app-name>:///?queryParam1=value1&queryParam2=value2..
+  const valuablePart = url.split('?')[1]; // this will return ['<app-name>:///', 'queryParam1=value1&queryParam2=value2..', ...]
+
+  if (valuablePart) {
+    const queries = valuablePart.split('&'); // this will return ['queryParam1=value', 'queryParam2=value2', ...]
+
+    if (queries.length) {
+      // some queries have been passed - determine which ones
+      queries.forEach((query) => {
+        const [key, value] = query.split('='); // this will return ['queryParam1', 'value1'], 2nd loop - ['queryParam2', 'value2']
+
+        if (['action', 'number'].includes(key)) {
+          Object.assign(data, { [key]: value });
+        }
+      });
+    }
+  }
+
+  return data;
+};
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [total, setTotal] = useState(0);
+  const [lastAction, setLastAction] = useState<MathAction | 'none'>('none');
+  const [lastNumber, setLastNumber] = useState<string>('-');
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  useWindowEventListener('single-instance', async (event) => {
+    console.log('single-instance emit detected..');
+
+    const { args: urlArgs } = event.payload as { args: string[] };
+    const { action, number } = extractDataFromUrl(urlArgs[1]); // [1] is app arguments (eg '<app-name>://?arg1=one&arg2=two..')
+
+    console.log('current (total):', total, ' incomming action: ', action, ' number: ', number);
+
+    if (!action || !number) {
+      console.log('no action or number provided');
+      return;
+    }
+
+    if (action !== 'add' && action !== 'sub') {
+      console.log('incorrect action provided');
+      return;
+    }
+
+    try {
+      const numericInput = Number(number);
+
+      if (action === 'add') {
+        setTotal(total + numericInput);
+      } else {
+        setTotal(total - numericInput);
+      }
+    } catch (error) {
+      console.log('cannot parse number to a valid numeric value');
+      return;
+    }
+  });
 
   return (
     <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
+      <p>Total: {total}</p>
+      <p>Last action: {lastAction}</p>
+      <p>Last number: {lastNumber}</p>
+      <button onClick={() => setTotal(0)}>Reset total</button>
+      <button onClick={() => setLastAction('none')}>Reset last action</button>
+      <button onClick={() => setLastNumber('-')}>Reset last number</button>
     </main>
   );
 }
