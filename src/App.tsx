@@ -38,7 +38,7 @@ function App() {
   const [lastNumber, setLastNumber] = useState<string>('-');
 
   useWindowEventListener('single-instance', async (event) => {
-    console.log('single-instance emit detected..');
+    console.log('single-instance emit detected..', event);
 
     const { args: urlArgs } = event.payload as { args: string[] };
     const { action, number } = extractDataFromUrl(urlArgs[1]); // [1] is app arguments (eg '<app-name>://?arg1=one&arg2=two..')
@@ -64,6 +64,7 @@ function App() {
         setTotal(total - numericInput);
       }
       setLastAction(action);
+      setLastNumber(numericInput.toString());
     } catch (error) {
       console.log('cannot parse number to a valid numeric value');
       return;
